@@ -1,0 +1,4 @@
+pyaudio
+vosk
+numpy
+scipy
