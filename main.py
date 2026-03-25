@@ -68,7 +68,7 @@ class AudioInputManager:
 class NoiseFilter:
     """RMS-based noise gate + bandpass filter (300 Hz – 3400 Hz)."""
 
-    def __init__(self, sample_rate=16000, rms_threshold=300, low_freq=300, high_freq=3400):
+    def __init__(self, sample_rate=16000, rms_threshold=50, low_freq=300, high_freq=3400):
         self.sample_rate = sample_rate
         self.rms_threshold = rms_threshold
         self.low_freq = low_freq
@@ -333,7 +333,7 @@ scrollbar.config(command=display_canvas.xview)
 braille_manager = BrailleManager(display_canvas, status_label, words_per_block=10)
 
 # === Create pipeline components ===
-noise_filter = NoiseFilter(sample_rate=16000)
+noise_filter = NoiseFilter(sample_rate=16000, rms_threshold=50)
 rolling_buffer = RollingWordBuffer(maxlen=10)
 keyword_detector = KeywordDetector()
 haptic_controller = HapticController()
