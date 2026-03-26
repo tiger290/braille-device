@@ -94,6 +94,11 @@ class NoiseFilter:
         # Convert bytes -> int16 numpy array
         audio_np = np.frombuffer(audio_chunk_bytes, dtype=np.int16).astype(np.float32)
 
+        # RMS noise gate on raw audio (before filtering)
+        rms = float(np.sqrt(np.mean(audio_np ** 2)))
+        if rms < self.rms_threshold:
+            return None
+
         # Bandpass filter
         if self.sos is not None:
             audio_np = sosfilt(self.sos, audio_np)
@@ -103,11 +108,6 @@ class NoiseFilter:
             freqs = np.fft.rfftfreq(len(audio_np), d=1.0 / self.sample_rate)
             fft[(freqs < self.low_freq) | (freqs > self.high_freq)] = 0
             audio_np = np.fft.irfft(fft, n=len(audio_np))
-
-        # RMS noise gate
-        rms = float(np.sqrt(np.mean(audio_np ** 2)))
-        if rms < self.rms_threshold:
-            return None
 
         # Convert back to int16 bytes
         filtered = np.clip(audio_np, -32768, 32767).astype(np.int16)
@@ -257,8 +257,8 @@ class BrailleManager:
             text=f"Words spoken: {len(self.all_words)} | Block: {block_num}/{total_blocks}", fg="green")
         block_words = self.all_words[self.current_index:self.current_index + self.words_per_block]
         text = " ".join(block_words)
-        cell_width = 90
-        cell_height = 90
+        cell_width = 60
+        cell_height = 60
         padding = 10
         x_pos = padding
         y_pos = padding
@@ -266,7 +266,7 @@ class BrailleManager:
             self.canvas.create_rectangle(x_pos, y_pos, x_pos + cell_width, y_pos + cell_height,
                                          fill="white", outline="lightgray", width=1)
             active = self.braille_dict.get(letter.lower(), [])
-            self.draw_braille_cell_direct(x_pos + 5, y_pos + 5, cell_width - 10, cell_height - 20, active)
+            self.draw_braille_cell_direct(x_pos + 4, y_pos + 4, cell_width - 8, cell_height - 14, active)
             self.canvas.create_text(x_pos + cell_width // 2, y_pos + cell_height - 10,
                                     text=letter.upper(), font=("Arial", 10, "bold"), fill="darkgray")
             x_pos += cell_width + padding
@@ -297,6 +297,9 @@ class BrailleManager:
         for word in words:
             if word.strip():
                 self.all_words.append(word.lower())
+                total = len(self.all_words)
+                if total % self.words_per_block == 0:
+                    self.current_index = total - self.words_per_block
         self.show_braille_block()
 
 
