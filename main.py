@@ -36,8 +36,7 @@ class AudioInputManager:
         self.recording_thread = None
 
     def start(self):
-        self.stream = self.audio.open(format=self.format, channels=self.channels,
-                                      rate=self.sample_rate, input=True,
+        self.stream = self.audio.open(format=self.format, channels=self.channels,b                                rate=self.sample_rate, input=True,
                                       frames_per_buffer=self.chunk_size)
         self.is_recording = True
         self.recording_thread = Thread(target=self._record, daemon=True)
@@ -66,7 +65,7 @@ class AudioInputManager:
 
 # === NoiseFilter ===
 class NoiseFilter:
-    """RMS-based noise gate + bandpass filter (300 Hz – 3400 Hz)."""
+    """RMS-based noise gate + bandpass filter (300 Hz - 3400 Hz)."""
 
     def __init__(self, sample_rate=16000, rms_threshold=50, low_freq=300, high_freq=3400):
         self.sample_rate = sample_rate
@@ -297,9 +296,6 @@ class BrailleManager:
         for word in words:
             if word.strip():
                 self.all_words.append(word.lower())
-                total = len(self.all_words)
-                if total % self.words_per_block == 0:
-                    self.current_index = total - self.words_per_block
         self.show_braille_block()
 
 
@@ -362,7 +358,7 @@ def process_audio_loop():
         # 1. Noise filter
         filtered = noise_filter.filter(chunk)
         if filtered is None:
-            # Chunk is below noise threshold – skip recognition
+            # Chunk is below noise threshold - skip recognition
             root.after(100, process_audio_loop)
             return
 
@@ -389,7 +385,6 @@ def process_audio_loop():
 
     root.after(100, process_audio_loop)
 
-
 process_audio_loop()
 
 
@@ -399,7 +394,6 @@ def toggle_noise_filter():
     state = "ON" if noise_filter.enabled else "OFF"
     btn_noise_filter.config(text=f"Noise Filter: {state}",
                             bg="lightgreen" if noise_filter.enabled else "lightyellow")
-
 
 # === UI buttons ===
 button_frame = tk.Frame(root, bg="lightgray")
