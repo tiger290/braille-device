@@ -36,7 +36,8 @@ class AudioInputManager:
         self.recording_thread = None
 
     def start(self):
-        self.stream = self.audio.open(format=self.format, channels=self.channels,b                                rate=self.sample_rate, input=True,
+        self.stream = self.audio.open(format=self.format, channels=self.channels,
+                                      rate=self.sample_rate, input=True,
                                       frames_per_buffer=self.chunk_size)
         self.is_recording = True
         self.recording_thread = Thread(target=self._record, daemon=True)
@@ -102,7 +103,6 @@ class NoiseFilter:
         if self.sos is not None:
             audio_np = sosfilt(self.sos, audio_np)
         else:
-            # Simple numpy-based bandpass via FFT when scipy is unavailable
             fft = np.fft.rfft(audio_np)
             freqs = np.fft.rfftfreq(len(audio_np), d=1.0 / self.sample_rate)
             fft[(freqs < self.low_freq) | (freqs > self.high_freq)] = 0
@@ -214,7 +214,7 @@ class BrailleManager:
             "n": [1, 3, 4, 5], "o": [1, 3, 5], "p": [1, 2, 3, 4], "q": [1, 2, 3, 4, 5],
             "r": [1, 2, 3, 5], "s": [2, 3, 4], "t": [2, 3, 4, 5], "u": [1, 3, 6],
             "v": [1, 2, 3, 6], "w": [2, 4, 5, 6], "x": [1, 3, 4, 6],
-            "y": [1, 3, 4, 5, 6],  # Fixed: was [1, 3, 4, 6]
+            "y": [1, 3, 4, 5, 6],
             "z": [1, 3, 5, 6],
             "0": [3, 4, 5, 6], "1": [1], "2": [1, 2], "3": [1, 4], "4": [1, 4, 5],
             "5": [1, 5], "6": [1, 2, 4], "7": [1, 2, 4, 5], "8": [1, 2, 5], "9": [2, 4],
@@ -358,7 +358,6 @@ def process_audio_loop():
         # 1. Noise filter
         filtered = noise_filter.filter(chunk)
         if filtered is None:
-            # Chunk is below noise threshold - skip recognition
             root.after(100, process_audio_loop)
             return
 
