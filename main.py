@@ -218,6 +218,7 @@ class BrailleManager:
             "z": [1, 3, 5, 6],
             "0": [3, 4, 5, 6], "1": [1], "2": [1, 2], "3": [1, 4], "4": [1, 4, 5],
             "5": [1, 5], "6": [1, 2, 4], "7": [1, 2, 4, 5], "8": [1, 2, 5], "9": [2, 4],
+            "#": [3, 4, 5, 6],  # ⠼ Number Indicator
             " ": [], ".": [2, 3, 4, 5, 6], ",": [2], "?": [2, 3, 4, 5], "!": [2, 3, 5],
             "'": [3], "-": [3, 6], "(": [1, 2, 3, 5, 6], ")": [2, 3, 4, 5, 6],
             ":": [1, 5, 6], ";": [1, 4, 5, 6], "&": [1, 2, 3, 4, 6],
@@ -261,7 +262,18 @@ class BrailleManager:
         padding = 10
         x_pos = padding
         y_pos = padding
+        prev_was_digit = False
         for idx, letter in enumerate(text):
+            is_digit = letter.isdigit()
+            # Insert Number Indicator (⠼) before each new group of consecutive digits
+            if is_digit and not prev_was_digit:
+                self.canvas.create_rectangle(x_pos, y_pos, x_pos + cell_width, y_pos + cell_height,
+                                             fill="white", outline="lightgray", width=1)
+                indicator_dots = self.braille_dict["#"]
+                self.draw_braille_cell_direct(x_pos + 5, y_pos + 5, cell_width - 10, cell_height - 20, indicator_dots)
+                self.canvas.create_text(x_pos + cell_width // 2, y_pos + cell_height - 10,
+                                        text="#", font=("Arial", 10, "bold"), fill="darkgray")
+                x_pos += cell_width + padding
             self.canvas.create_rectangle(x_pos, y_pos, x_pos + cell_width, y_pos + cell_height,
                                          fill="white", outline="lightgray", width=1)
             active = self.braille_dict.get(letter.lower(), [])
@@ -269,6 +281,7 @@ class BrailleManager:
             self.canvas.create_text(x_pos + cell_width // 2, y_pos + cell_height - 10,
                                     text=letter.upper(), font=("Arial", 10, "bold"), fill="darkgray")
             x_pos += cell_width + padding
+            prev_was_digit = is_digit
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
         self.canvas.xview_moveto(0)
 
