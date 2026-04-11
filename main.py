@@ -198,6 +198,68 @@ class HapticController:
             GPIO.cleanup()
 
 
+# === WordToNumberConverter ===
+class WordToNumberConverter:
+    """Converts English number words in a string to digit strings.
+
+    Examples:
+        "ten"                       -> "10"
+        "forty two"                 -> "42"
+        "one hundred twenty three"  -> "123"
+        "two thousand five hundred" -> "2500"
+        "hello twenty three cats"   -> "hello 23 cats"
+    """
+
+    _ONES = {
+        "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4,
+        "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+        "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13,
+        "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17,
+        "eighteen": 18, "nineteen": 19,
+    }
+    _TENS = {
+        "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+        "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90,
+    }
+    _MULTIPLIERS = {"hundred": 100, "thousand": 1000}
+
+    def _is_number_word(self, word):
+        return word in self._ONES or word in self._TENS or word in self._MULTIPLIERS
+
+    def _words_to_int(self, words):
+        """Convert a list of number words to a single integer."""
+        current = 0
+        result = 0
+        for word in words:
+            if word in self._ONES:
+                current += self._ONES[word]
+            elif word in self._TENS:
+                current += self._TENS[word]
+            elif word == "hundred":
+                current = (current if current != 0 else 1) * 100
+            elif word == "thousand":
+                result += (current if current != 0 else 1) * 1000
+                current = 0
+        return result + current
+
+    def convert(self, text):
+        """Replace runs of number words in *text* with their digit equivalents."""
+        words = text.split()
+        output = []
+        num_words = []
+        for word in words:
+            if self._is_number_word(word):
+                num_words.append(word)
+            else:
+                if num_words:
+                    output.append(str(self._words_to_int(num_words)))
+                    num_words = []
+                output.append(word)
+        if num_words:
+            output.append(str(self._words_to_int(num_words)))
+        return " ".join(output)
+
+
 # === BrailleManager ===
 class BrailleManager:
     def __init__(self, canvas_widget, status_label, words_per_block=10):
@@ -349,6 +411,7 @@ noise_filter = NoiseFilter(sample_rate=16000, rms_threshold=50)
 rolling_buffer = RollingWordBuffer(maxlen=10)
 keyword_detector = KeywordDetector()
 haptic_controller = HapticController()
+word_to_number_converter = WordToNumberConverter()
 
 # === VOSK setup ===
 if not os.path.exists("vosk-model-small-en-us-0.15"):
@@ -381,7 +444,7 @@ def process_audio_loop():
             if text:
                 print(f"Recognised: {text}")
 
-                # 3. Keyword detection
+                # 3. Keyword detection (runs on original VOSK text)
                 found_keywords = keyword_detector.detect(text)
                 if found_keywords:
                     kw_text = "⚠ KEYWORD: " + ", ".join(found_keywords).upper()
@@ -389,7 +452,10 @@ def process_audio_loop():
                     haptic_controller.alert_pattern()
                     print(f"[KeywordDetector] Found: {found_keywords}")
 
-                # 4. Rolling buffer + Braille display
+                # 4. Convert number words to digits before Braille display
+                text = word_to_number_converter.convert(text)
+
+                # 5. Rolling buffer + Braille display
                 words = text.split()
                 for word in words:
                     rolling_buffer.add(word)
